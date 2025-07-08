@@ -2,6 +2,7 @@ package LibrarySystem;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Scanner;
 
@@ -49,6 +50,49 @@ public class User {
                 e.printStackTrace();
             }
         }
+    }
+
+    public boolean user_exist(String email) {
+        String query = "SELECT * FROM User WHERE email = ?";
+
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, email);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public String Login(){
+        String login_query = "SELECT * FROM User WHERE email = ? AND password = ?";
+        System.out.println("Enter Email: ");
+        String email  = scanner.nextLine();
+        System.out.println("Enter Password: ");
+        String pass = scanner.nextLine();
+
+        try{
+            PreparedStatement preparedStatement = connection.prepareStatement(login_query);
+            preparedStatement.setString(1,email);
+            preparedStatement.setString(2,pass);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if(resultSet.next()){
+                return email ;
+            }else{
+                return  null;
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
 }
