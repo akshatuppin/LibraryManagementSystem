@@ -20,6 +20,7 @@ public class Main {
             Connection connection = DriverManager.getConnection(url,root,password);
             Scanner scanner = new Scanner(System.in);
             User user = new User(connection,scanner);
+            Book book = new Book(connection,scanner);
 
 
         }catch (SQLException e){
