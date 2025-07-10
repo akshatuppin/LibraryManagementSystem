@@ -113,4 +113,31 @@ public class Book {
         }
     }
 
+
+    public void list_all_books(){
+        String list_query = "SELECT * FROM Book";
+        try{
+            PreparedStatement preparedStatement = connection.prepareStatement(list_query);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            System.out.println("=====   BOOK PRESENT RIGHT NOW  =====");
+            if(resultSet.next()){
+                int book_id = resultSet.getInt("book_id");
+                String book_name = resultSet.getString("title");
+                String author = resultSet.getString("author");
+                boolean is_available = resultSet.getBoolean("is_available");
+                System.out.println("Book id: "+book_id);
+                System.out.println("Book Title: "+book_name);
+                System.out.println("Author of this Book is "+author);
+                if(is_available){
+                    System.out.println("Currently this Book is Available.");
+                }else{
+                    System.out.println("Currently this Book is Not Available.");
+                }
+            }else{
+                System.out.println("There is no Book present in the library right now !!!");
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
 }
