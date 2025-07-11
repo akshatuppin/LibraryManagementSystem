@@ -140,4 +140,26 @@ public class Book {
             e.printStackTrace();
         }
     }
+
+    public void delete_book(int book_id){
+        String delete_query = "DELETE FROM Book WHERE book_id = ?";
+        System.out.println("Enter the Book_ID of the book to be Deleted: ");
+        int delete_id = scanner.nextInt();
+        if(book_present(delete_id)){
+            try{
+                PreparedStatement preparedStatement = connection.prepareStatement(delete_query);
+                preparedStatement.setInt(1,delete_id);
+                int delete_rows = preparedStatement.executeUpdate();
+                if(delete_rows > 0){
+                    System.out.println("Book Delete Successfully..");
+                }else {
+                    System.out.println("Book deletion Failed..");
+                }
+            }catch (SQLException e){
+                e.printStackTrace();
+            }
+        }else{
+            System.out.println("Book is not present for the ID provided ..");
+        }
+    }
 }
