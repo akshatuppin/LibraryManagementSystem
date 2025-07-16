@@ -21,6 +21,7 @@ public class Main {
             Scanner scanner = new Scanner(System.in);
             User user = new User(connection,scanner);
             Book book = new Book(connection,scanner);
+            Library library = new Library(connection,scanner);
 
 
         }catch (SQLException e){
