@@ -1,9 +1,6 @@
 package LibrarySystem;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Scanner;
 
 public class Library {
@@ -18,7 +15,9 @@ public class Library {
 
     // issue_book(user_id ,book_id) , return_book(user_id ,book_id) , getIssued_book(user_id) ,search_book
 
-    public void issue_book(int user_id ){
+
+    // need to make few changes main is that  should set is_available false after the book is issued .
+    public void issue_book(int user_id ) throws SQLException {
         System.out.println("Enter the book ID: ");
         int book_id = scanner.nextInt();
         try{
@@ -35,22 +34,91 @@ public class Library {
                     ResultSet resultSet = preparedStatement.executeQuery();
                     if(resultSet.next()){
                         boolean available =resultSet.getBoolean("is_available");
-
+                        if(available){
+                            int transaction_no = generate_transaction_id();
+                            String issue_transaction_table = "INSERT INTO Transaction (transaction_id,user_id,book_id) VALUES (?,?,?)" ;
+                            PreparedStatement preparedStatement2 = connection.prepareStatement(issue_transaction_table);
+                            preparedStatement2.setInt(1,transaction_no);
+                            preparedStatement2.setInt(2,user_id);
+                            preparedStatement2.setInt(3,book_id);
+                            int rows_inserted = preparedStatement2.executeUpdate();
+                            if(rows_inserted > 0){
+                                PreparedStatement pre = connection.prepareStatement("SELECT * FROM Book WHERE book_id = ?");
+                                pre.setInt(1,book_id);
+                                ResultSet get_book = pre.executeQuery();
+                                PreparedStatement preparedStatement3 = connection.prepareStatement("UPDATE Book SET is_available = false WHERE book_id =? ");
+                                preparedStatement3.setInt(1,book_id);
+                                int rowsAffected = preparedStatement3.executeUpdate();
+                                if(rowsAffected >0){
+                                    if(get_book.next()){
+                                        String book_name = get_book.getString("title");
+                                        System.out.println("The book with the Title: "+book_name);
+                                        System.out.println("Is Issued to user with user ID: "+user_id);
+                                        connection.setAutoCommit(true);
+                                    }
+                                    System.out.println("Book issued Successfully...");
+                                    System.out.println("Thank you .");
+                                }else{
+                                    System.out.println("Unable to update Book table..");
+                                    return;
+                                }
+                            }else{
+                                System.out.println("Book is not issued due to some Reasons   Sorry ...");
+                            }
+                        }else{
+                            System.out.println("Book is currently not available..");
+                        }
                     }else{
                         System.out.println("Book ID is not valid..");
                     }
                 }else{
                     System.out.println("Invalid user ID ..");
-                    connection.setAutoCommit(true);
-                    return ;
                 }
             }else{
                 System.out.println("User for this user id not found.");
                 System.out.println("Recheck and Retry .");
-                connection.setAutoCommit(true);
             }
         }catch (SQLException e){
             e.printStackTrace();
         }
+        connection.setAutoCommit(true);
+    }
+
+    public void return_book(int user_id){
+        System.out.println("Enter the Book ID you want to Return: ");
+        int book_id = scanner.nextInt();
+        String check_query = "SELECT * FROM  Transaction WHERE user_id = ? AND book_id = ?";
+        try{
+            PreparedStatement preparedStatement = connection.prepareStatement(check_query);
+            preparedStatement.setInt(1,user_id);
+            preparedStatement.setInt(2,book_id);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if(resultSet.next()){
+                System.out.println("Currently book is issued for you.");
+                int transaction_id = resultSet.getInt("transaction_id");
+
+            }else{
+                System.out.println("No book is issued on your User ID");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public int generate_transaction_id(){
+        try{
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT transaction_id FROM Transaction ORDER BY transaction_id DESC LIMIT 1");
+            if(resultSet.next()){
+                int new_transaction_id = resultSet.getInt("transaction_id");
+                return new_transaction_id + 1;
+            }else{
+                return 1000;
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+        return 1000;
     }
 }
