@@ -15,8 +15,6 @@ public class Library {
 
     // issue_book(user_id ,book_id) , return_book(user_id ,book_id) , getIssued_book(user_id) ,search_book
 
-
-    // need to make few changes main is that  should set is_available false after the book is issued .
     public void issue_book(int user_id ) throws SQLException {
         System.out.println("Enter the book ID: ");
         int book_id = scanner.nextInt();
@@ -87,6 +85,8 @@ public class Library {
     public void return_book(int user_id){
         System.out.println("Enter the Book ID you want to Return: ");
         int book_id = scanner.nextInt();
+        scanner.nextLine();
+
         String check_query = "SELECT * FROM  Transaction WHERE user_id = ? AND book_id = ?";
         try{
             PreparedStatement preparedStatement = connection.prepareStatement(check_query);
@@ -94,16 +94,48 @@ public class Library {
             preparedStatement.setInt(2,book_id);
             ResultSet resultSet = preparedStatement.executeQuery();
             if(resultSet.next()){
-                System.out.println("Currently book is issued for you.");
-                int transaction_id = resultSet.getInt("transaction_id");
+                Date issue_date = resultSet.getDate("issue_date");
+                System.out.println("Your issued book with the book id: "+book_id);
+                System.out.println("You issued this book on "+issue_date);
+                System.out.print("Do you want to return this Book? [y/n]");
+                String choice = scanner.nextLine().trim();
+                int transaction_id  = resultSet.getInt("transaction_id");
+                if(choice.equalsIgnoreCase("y")){
+                    java.sql.Date return_date = new java.sql.Date(System.currentTimeMillis());
 
+                    String transaction_query = " UPDATE TABLE Transaction SET return_date = ? WHERE transaction_id = ? ";
+                    String book_query = "UPDATE TABLE Book SET is_available = ? WHERE book_id = ? ";
+                    PreparedStatement transaction = connection.prepareStatement(transaction_query);
+                    PreparedStatement book = connection.prepareStatement(book_query);
+
+                    //update transaction table
+                    transaction.setDate(1,return_date);
+                    transaction.setInt(2,transaction_id);
+                    transaction.executeUpdate();
+
+                    //update book table
+                    book.setBoolean(1,true);
+                    book.setInt(2,book_id);
+                    book.executeUpdate();
+
+                    System.out.println("Book returned successfully!!");
+
+
+                }else if(choice.equalsIgnoreCase("n")){
+                    System.out.println("Okay, keeping the book for now.");
+                    return;
+                }else{
+                    System.out.println("Enter the valid Choice [y/n]");
+                }
             }else{
-                System.out.println("No book is issued on your User ID");
+                System.out.println("No book is issued on your User ID or Book ID is incorrect");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
+
 
 
     public int generate_transaction_id(){
