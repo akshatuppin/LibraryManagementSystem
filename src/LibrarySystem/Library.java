@@ -13,7 +13,7 @@ public class Library {
         this.scanner = scanner ;
     }
 
-    // issue_book(user_id ,book_id) , return_book(user_id ,book_id) , getIssued_book(user_id) ,search_book
+    // issue_book(user_id ,book_id) , return_book(user_id ,book_id) ,search_book
 
     public void issue_book(int user_id ) throws SQLException {
         System.out.println("Enter the book ID: ");
@@ -136,6 +136,31 @@ public class Library {
     }
 
 
+    public void search_book(){
+        String search_query = "SELECT * FROM Book WHERE book_id = ?";
+        System.out.println("Please enter the book ID present on the Book: ");
+        int id = scanner.nextInt();
+        try{
+            PreparedStatement search = connection.prepareStatement(search_query);
+            search.setInt(1,id);
+            ResultSet result = search.executeQuery();
+            if(result.next()){
+
+            }else{
+                System.out.println("Book with this ID is not issued for you OR recheck the BOOK ID.");
+                System.out.println("Do you want to search again ?[y/n]");
+                String ch = scanner.nextLine();
+                if(ch.equalsIgnoreCase("y")){
+                    search_book();
+                }else{
+                    System.out.println("Ok , Moving to main ..");
+                    return;
+                }
+            }
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+    }
 
 
     public int generate_transaction_id(){
