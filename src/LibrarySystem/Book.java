@@ -16,8 +16,9 @@ public class Book {
         this.scanner = scanner ;
     }
 
-    public String insert_book(){
-        String insert_query = "INSERT INTO Book(title,author) VALUES (?,?)";
+    public void  insert_book(){
+        scanner.nextLine();
+        String insert_query = "INSERT INTO Book(title,author,is_available) VALUES (?,?,TRUE)";
         System.out.println("Enter Title of the Book: ");
         String title = scanner.nextLine();
         System.out.println("Enter the name of the Author: ");
@@ -27,13 +28,16 @@ public class Book {
                 PreparedStatement preparedStatement = connection.prepareStatement(insert_query);
                 preparedStatement.setString(1,title);
                 preparedStatement.setString(2,author);
+                int rows_affected = preparedStatement.executeUpdate();
+                if(rows_affected >0){
+                    System.out.println("Book inserted successfully..");
+                }
             }catch (SQLException e){
                 e.printStackTrace();
             }
         }else {
-            throw new RuntimeException("Book Already Present for this Title.");
+            System.out.println("Book already exists with this Title");
         }
-        return "Failed to insert book.";
     }
 
     public boolean book_present_title(String title){
@@ -42,30 +46,11 @@ public class Book {
             PreparedStatement preparedStatement = connection.prepareStatement(search_query);
             preparedStatement.setString(1, title);
             ResultSet resultSet = preparedStatement.executeQuery();
-            if(resultSet.next()){
-                return true;
-            }else{
-                return false;
-            }
+            return resultSet.next();
         }catch (SQLException e){
             e.printStackTrace();
         }
         return false;
-    }
-
-    public int get_book_id(int book_id){
-        String search_query = "SELECT * FROM Book WHERE book_id = ?";
-        try{
-            PreparedStatement preaparedStatement = connection.prepareStatement(search_query);
-            preaparedStatement.setInt(1,book_id);
-            ResultSet resultSet = preaparedStatement.executeQuery();
-            if(resultSet.next()){
-                return resultSet.getInt("book_id");
-            }
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-        throw new RuntimeException("Book for this ID is not present .");
     }
 
 
@@ -75,11 +60,7 @@ public class Book {
             PreparedStatement preparedStatement = connection.prepareStatement(search_query);
             preparedStatement.setInt(1, book_id);
             ResultSet resultSet = preparedStatement.executeQuery();
-            if(resultSet.next()){
-                return true;
-            }else{
-                return false;
-            }
+            return resultSet.next();
         }catch (SQLException e){
             e.printStackTrace();
         }
@@ -87,6 +68,7 @@ public class Book {
     }
 
     public void updateBookDetails(int book_id){
+        scanner.nextLine();
         System.out.println("Enter the New Title of the Book: ");
         String title = scanner.nextLine();
         System.out.println("Enter the Updated Author Name: ");
@@ -100,10 +82,9 @@ public class Book {
                 preparedStatement.setInt(3,book_id);
                 int rows_affected = preparedStatement.executeUpdate();
                 if(rows_affected >0){
-                    System.out.println("The Book Title and Author are Updated now..");
-                    System.out.println("Remember the Book ID: "+book_id);
+                    System.out.println("Book details updated successfully!");
                 }else{
-                    System.out.println("Updation Failed!!");
+                    System.out.println("Update Failed!!");
                 }
             }catch (SQLException e){
                 e.printStackTrace();
@@ -114,52 +95,54 @@ public class Book {
     }
 
 
-    public void list_all_books(){
+    public void list_all_books() {
         String list_query = "SELECT * FROM Book";
-        try{
-            PreparedStatement preparedStatement = connection.prepareStatement(list_query);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            System.out.println("=====   BOOK PRESENT RIGHT NOW  =====");
-            if(resultSet.next()){
+        try (PreparedStatement preparedStatement = connection.prepareStatement(list_query);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+
+            System.out.println("===== BOOKS PRESENT RIGHT NOW =====");
+            boolean booksFound = false;
+            while (resultSet.next()) {
+                booksFound = true;
                 int book_id = resultSet.getInt("book_id");
                 String book_name = resultSet.getString("title");
                 String author = resultSet.getString("author");
                 boolean is_available = resultSet.getBoolean("is_available");
-                System.out.println("Book id: "+book_id);
-                System.out.println("Book Title: "+book_name);
-                System.out.println("Author of this Book is "+author);
-                if(is_available){
-                    System.out.println("Currently this Book is Available.");
-                }else{
-                    System.out.println("Currently this Book is Not Available.");
-                }
-            }else{
-                System.out.println("There is no Book present in the library right now !!!");
+
+                System.out.println("Book ID: " + book_id);
+                System.out.println("Title: " + book_name);
+                System.out.println("Author: " + author);
+                System.out.println("Availability: " + (is_available ? "Available" : "Not Available"));
+                System.out.println("-----------------------------------");
             }
-        }catch (SQLException e){
+            if (!booksFound) {
+                System.out.println("No books found in the library.");
+            }
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public void delete_book(int book_id){
-        String delete_query = "DELETE FROM Book WHERE book_id = ?";
-        System.out.println("Enter the Book_ID of the book to be Deleted: ");
+    public void delete_book() {
+        System.out.print("Enter the Book_ID of the book to be Deleted: ");
         int delete_id = scanner.nextInt();
-        if(book_present(delete_id)){
-            try{
-                PreparedStatement preparedStatement = connection.prepareStatement(delete_query);
-                preparedStatement.setInt(1,delete_id);
+        scanner.nextLine();
+
+        String delete_query = "DELETE FROM Book WHERE book_id = ?";
+        if (book_present(delete_id)) {
+            try (PreparedStatement preparedStatement = connection.prepareStatement(delete_query)) {
+                preparedStatement.setInt(1, delete_id);
                 int delete_rows = preparedStatement.executeUpdate();
-                if(delete_rows > 0){
-                    System.out.println("Book Delete Successfully..");
-                }else {
-                    System.out.println("Book deletion Failed..");
+                if (delete_rows > 0) {
+                    System.out.println("Book deleted successfully.");
+                } else {
+                    System.out.println("Book deletion failed.");
                 }
-            }catch (SQLException e){
+            } catch (SQLException e) {
                 e.printStackTrace();
             }
-        }else{
-            System.out.println("Book is not present for the ID provided ..");
+        } else {
+            System.out.println("No book found for the provided Book ID.");
         }
     }
 }
